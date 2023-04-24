@@ -9,11 +9,15 @@ export const main = async () => {
     },
   });
 
-  apiClient.post("/mapping", {
-    site_id: siteInfo[0].Site_ID,
-    name: siteInfo[0].Name,
-    url: siteInfo[0].URL,
-  });
+  await Promise.allSettled(
+    siteInfo.map((info) =>
+      apiClient.post("/mapping", {
+        site_id: info.Site_ID,
+        name: info.Name,
+        url: info.URL,
+      })
+    )
+  );
 };
 
 export default { run: main };

@@ -24,33 +24,30 @@ mappingRouter.post("/", async (req, res) => {
   });
 
   if (result.length == 0) {
-    throw new Error("Not found");
+    console.error("Not found");
+    res.status(404).send("Not found");
   }
 
   if (result.length > 1) {
-    throw new Error("Duplicate");
+    console.error("Duplicate");
+    res.status(500).send("Duplicate");
   }
 
   if (ARCHIVE_PATH == undefined) {
-    throw new Error("ArchivePath is not defined");
+    console.error("ArchivePath is not defined");
+    res.status(500).send("ArchivePath is not defined");
   }
 
-  exec(
-    `ln -s ${ARCHIVE_PATH}/webarchive/${site_id} ${ARCHIVE_PATH}/new/${result[0].id}`,
-    (error) => {
-      if (error) {
-        console.error(`exec error: ${error}`);
-        return;
-      }
-      console.log(
-        `${ARCHIVE_PATH}/webarchive/${site_id} -> ${ARCHIVE_PATH}/new/${result[0].id}`
-      );
+  const cmd = `ln -s ${ARCHIVE_PATH}/webarchive/${site_id} ${ARCHIVE_PATH}/new/${result[0].id}`;
+  exec(cmd, (error) => {
+    if (error) {
+      console.error(`exec error: ${error}`);
+      return;
     }
-  );
+    console.log(
+      `${ARCHIVE_PATH}/webarchive/${site_id} -> ${ARCHIVE_PATH}/new/${result[0].id}`
+    );
+  });
 
   res.send("OK");
-});
-
-mappingRouter.get("/all", async (req, res) => {
-  prisma;
 });
