@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model class_high {
+  class_high      Int     @id @default(autoincrement())
+  class_high_name String? @db.VarChar(10)
+  order           Int?
+}
+
+model class_high_to_mid {
+  class_high     Int
+  class_mid      Int     @id @default(autoincrement())
+  class_mid_name String? @db.VarChar(20)
+  order          Int?
+}
+
+model class_mid_to_low {
+  class_mid      Int
+  class_low      Int     @id @default(autoincrement())
+  class_low_name String? @db.VarChar(20)
+  order          Int?
+}
+
+model download_info {
+  Site_ID  Int
+  Time     DateTime @db.Date
+  Location String?  @db.VarChar(50)
+
+  @@id([Site_ID, Time])
+}
+
+model location {
+  location String @db.Text
+  IO       String @id @db.VarChar(3)
+}
+
+model site_class {
+  Site_ID   Int @default(0)
+  class_low Int @default(0)
+
+  @@id([class_low, Site_ID])
+}
+
+model site_info {
+  Site_ID         Int       @id @default(autoincrement())
+  Name            String    @db.VarChar(20)
+  URL             String    @db.VarChar(100)
+  extra_command   String?   @db.VarChar(100)
+  tag             String?   @db.VarChar(500)
+  Site_describe   String?   @db.VarChar(50)
+  visit           Int?      @default(0)
+  download_period Int?      @default(0)
+  language        String?   @db.VarChar(10)
+  filter          Int?
+  comment         String?   @db.Text
+  last_download   DateTime? @db.Date
+
+  @@index([Site_ID], map: "Site_ID")
+}

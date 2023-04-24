@@ -1,0 +1,55 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id         String       @id @default(cuid())
+  name       String       @unique
+  department Department[]
+
+  @@index([name])
+}
+
+model Department {
+  id         String   @id @default(cuid())
+  name       String
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+  office     Office[]
+
+  @@unique([name, categoryId])
+  @@index([name])
+}
+
+model Office {
+  id   String @id @default(cuid())
+  name String
+
+  department   Department @relation(fields: [departmentId], references: [id])
+  departmentId String
+
+  website Website[]
+
+  @@unique([name, departmentId])
+  @@index([name])
+}
+
+model Website {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  isValid   Boolean  @default(true)
+  viewCount Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  office   Office @relation(fields: [officeId], references: [id])
+  officeId String
+}
