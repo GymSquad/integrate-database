@@ -1,3 +1,4 @@
+import throttledQueue from "throttled-queue";
 import { apiClient, prisma } from ".";
 import {
   createClassHighNameMap,
@@ -32,33 +33,58 @@ const main = async () => {
   const classMidNameMap = await createClassMidNameMap();
   const classHighNameMap = await createClassHighNameMap();
 
-  const res = await Promise.allSettled(
+  const throttle = throttledQueue(100, 1000);
+
+  console.log(siteInfo.length);
+
+  await Promise.allSettled(
     siteInfo.map(async (info) => {
-      const classLowId = siteToClassLowMap.get(info.Site_ID);
-      if (classLowId == null) throw `Can't find classLowId: ${info.Site_ID}`;
+      const classLowIdList = siteToClassLowMap.get(info.Site_ID);
+      if (classLowIdList == null)
+        throw `Can't find classLowId: ${info.Site_ID}`;
 
-      const classLowName = classLowNameMap.get(classLowId);
-      if (classLowName == null) throw `Can't find classLowName: ${classLowId}`;
+      const axiosList = classLowIdList.map((classLowId) => {
+        const classLowName = classLowNameMap.get(classLowId);
+        if (classLowName == null) {
+          throw `Can't find classLowName: ${classLowId}`;
+        }
 
-      const classMidId = classLowToMidMap.get(classLowId);
-      if (classMidId == null) throw `Can't find classMidId: ${classLowId}`;
+        const classMidId = classLowToMidMap.get(classLowId);
+        if (classMidId == null) {
+          throw `Can't find classMidId: ${classLowId}`;
+        }
+        const classMidName = classMidNameMap.get(classMidId);
+        if (classMidName == null) {
+          throw `Can't find classMidName: ${classMidId}`;
+        }
 
-      const classMidName = classMidNameMap.get(classMidId);
-      if (classMidName == null) throw `Can't find classMidName: ${classMidId}`;
+        const classHighId = classMidToHighMap.get(classMidId);
+        if (classHighId == null) {
+          throw `Can't find classHighId: ${classMidId}`;
+        }
 
-      const classHighId = classMidToHighMap.get(classMidId);
-      if (classHighId == null) throw `Can't find classHighId: ${classMidId}`;
+        const classHighName = classHighNameMap.get(classHighId);
+        if (classHighName == null) {
+          throw `Can't find classHighName: ${classHighId}`;
+        }
 
-      const classHighName = classHighNameMap.get(classHighId);
-      if (classHighName == null)
-        throw `Can't find classHighName: ${classHighId}`;
+        return throttle(() =>
+          apiClient.post("/website", {
+            categoryName: classHighName,
+            departmentName: classMidName,
+            officeName: classLowName,
+            siteUrl: info.URL,
+            websiteName: info.Name,
+          })
+        );
+      });
 
-      return apiClient.post("/website", {
-        categoryName: classHighName,
-        departmentName: classMidName,
-        officeName: classLowName,
-        siteUrl: info.URL,
-        websiteName: info.Name,
+      const results = await Promise.allSettled(axiosList);
+
+      results.forEach((result) => {
+        if (result.status === "rejected") {
+          console.error(result.reason);
+        }
       });
     })
   ).catch(console.error);

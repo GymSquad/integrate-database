@@ -33,8 +33,17 @@ export const createClassLowToMidMap = async () => {
 /** site_id -> class_low */
 export const createSiteToClassLowMap = async () => {
   const siteClassTable = await prisma.site_class.findMany();
-  const siteClassList = siteClassTable.map(
-    (s) => [s.Site_ID, s.class_low] as const
-  );
-  return new Map(siteClassList);
+
+  let lowMap = new Map<number, number[]>();
+
+  siteClassTable.forEach((s) => {
+    const low = lowMap.get(s.Site_ID);
+    if (low == null) {
+      lowMap.set(s.Site_ID, [s.class_low]);
+    } else {
+      low.push(s.class_low);
+    }
+  });
+
+  return lowMap;
 };

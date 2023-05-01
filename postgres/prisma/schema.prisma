@@ -50,6 +50,7 @@ model Website {
   viewCount Int      @default(0)
   updatedAt DateTime @updatedAt
 
-  office   Office @relation(fields: [officeId], references: [id])
-  officeId String
+  office Office[]
+
+  @@unique([url, name])
 }

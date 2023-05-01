@@ -1,4 +1,6 @@
+import { Prisma } from "@prisma/client";
 import { Router } from "express";
+import { writeFile } from "fs/promises";
 import { prisma } from "./app";
 import {
   findCategoryRow,
@@ -8,7 +10,17 @@ import {
 
 export const websiteRouter = Router();
 
-websiteRouter.get("/", (_, res) => res.send("website"));
+websiteRouter.get("/", async (_, res) => {
+  await writeFile(
+    "errors.json",
+    JSON.stringify(
+      errors.map((data, index) => ({ index, ...data })),
+      null,
+      2
+    )
+  );
+  res.send("ok");
+});
 
 type createWebsiteInput = {
   categoryName: string;
@@ -17,6 +29,11 @@ type createWebsiteInput = {
   siteUrl: string;
   websiteName: string;
 };
+
+const errors: {
+  websiteName: string;
+  siteUrl: string;
+}[] = [];
 
 websiteRouter.post("/", async (req, res) => {
   const {
@@ -44,14 +61,47 @@ websiteRouter.post("/", async (req, res) => {
     console.log(`"Can't find officeRow: ${officeRow}"`);
     return res.status(422).send(`"Can't find officeRow: ${officeRow}"`);
   }
+  try {
+    await prisma.website.upsert({
+      create: {
+        name: websiteName,
+        url: siteUrl,
+        office: {
+          connect: {
+            id: officeRow.id,
+          },
+        },
+      },
+      update: {
+        office: {
+          connect: {
+            id: officeRow.id,
+          },
+        },
+      },
+      where: {
+        url_name: {
+          url: siteUrl,
+          name: websiteName,
+        },
+      },
+    });
+  } catch (err) {
+    // console.count("something went wrong");
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      errors.push({
+        websiteName,
+        siteUrl,
+      });
+    } else {
+      console.log(err);
+    }
+    // await writeFile("website-error.json", JSON.stringify(req.body));
+    return res.status(200).send("bad");
+  }
 
-  const createWebsiteInput = await prisma.website.create({
-    data: {
-      name: websiteName,
-      url: siteUrl,
-      officeId: officeRow.id,
-    },
-  });
-
-  res.send("done");
+  res.status(201).send("done");
 });
