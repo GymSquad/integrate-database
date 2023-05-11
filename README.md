@@ -38,6 +38,12 @@ Open another terminal and enter `/mysql`, then run the integrate script
   pnpm start
 ```
 
+Hit the API to write logs
+
+```bash
+  curl http://localhost:3000/website
+```
+
 When all the tasks are done, you will find `/postgres/id-mapping.json`, and you can run the move script to move the archive files
 
 ```bash
