@@ -19,6 +19,11 @@ websiteRouter.get("/", async (_, res) => {
       2
     )
   );
+
+  await writeFile(
+    "id-mapping.json",
+    JSON.stringify(Object.fromEntries(idMap), null, 2)
+  );
   res.send("ok");
 });
 
@@ -27,6 +32,7 @@ type createWebsiteInput = {
   departmentName: string;
   officeName: string;
   siteUrl: string;
+  siteId: string;
   websiteName: string;
 };
 
@@ -35,12 +41,15 @@ const errors: {
   siteUrl: string;
 }[] = [];
 
+const idMap = new Map<string, string>();
+
 websiteRouter.post("/", async (req, res) => {
   const {
     categoryName,
     departmentName,
     officeName,
     siteUrl,
+    siteId,
     websiteName,
   }: createWebsiteInput = req.body;
 
@@ -62,7 +71,7 @@ websiteRouter.post("/", async (req, res) => {
     return res.status(422).send(`"Can't find officeRow: ${officeRow}"`);
   }
   try {
-    await prisma.website.upsert({
+    const web = await prisma.website.upsert({
       create: {
         name: websiteName,
         url: siteUrl,
@@ -86,6 +95,7 @@ websiteRouter.post("/", async (req, res) => {
         },
       },
     });
+    idMap.set(web.id, siteId);
   } catch (err) {
     // console.count("something went wrong");
     if (

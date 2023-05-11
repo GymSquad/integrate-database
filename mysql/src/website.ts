@@ -74,6 +74,7 @@ const main = async () => {
             departmentName: classMidName,
             officeName: classLowName,
             siteUrl: info.URL,
+            siteId: info.Site_ID,
             websiteName: info.Name,
           })
         );
